@@ -34,7 +34,7 @@ public class CasLock {
             new Thread(trans, "t"+i).start();
         }
         cdl.await();
-        System.out.println("-----½áÊø:"+(System.currentTimeMillis()-start)/1000+", Óà¶î:"+balance);
+        System.out.println("-----ç»“æŸ:"+(System.currentTimeMillis()-start)/1000+", ä½™é¢:"+balance);
     }
     
 }
