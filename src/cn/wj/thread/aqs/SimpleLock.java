@@ -13,6 +13,8 @@ import cn.wj.thread.util.MyLock;
 * AQS是基于一个叫CLH lock queue的来实现线程阻塞队列
 * 参考:   http://zhanjindong.com/2015/03/10/java-concurrent-package-aqs-overview AQS框架概述
 *       http://ifeve.com/java-special-troops-aqs/   AQS原理解析
+*       http://blog.csdn.net/fei33423/article/details/30316377 CLH MCS锁
+*       http://blog.csdn.net/aesop_wubo/article/details/7533186 CLH锁
 *       http://www.cnblogs.com/zhanjindong/p/java-concurrent-package-ThreadPoolExecutor.html executor解析
 **/
 public class SimpleLock extends AbstractQueuedSynchronizer implements MyLock{
