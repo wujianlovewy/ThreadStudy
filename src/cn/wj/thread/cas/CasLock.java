@@ -21,7 +21,7 @@ import java.util.concurrent.locks.LockSupport;
 **/
 public class CasLock {
 
-    public static int threadNo = 20000;
+    public static int threadNo = 200000;
     
     //线程结束计数
     public static CountDownLatch endLatch = new CountDownLatch(threadNo);
@@ -72,8 +72,8 @@ public class CasLock {
     }
     
     public static void main(String[] args) throws Exception {
-        //poolTrans();
-        noPoolTrans();
+        poolTrans();
+        //noPoolTrans();
     }
     
     public static void  poolTrans() throws Exception{
