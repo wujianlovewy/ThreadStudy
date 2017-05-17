@@ -10,6 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import cn.wj.thread.util.LockConst;
+import cn.wj.thread.util.LockRun;
+import cn.wj.thread.util.MyLock;
+
 /**
 * @author jwu
 * @date 2017-5-9 
@@ -19,18 +23,9 @@ import java.util.concurrent.locks.LockSupport;
 *      http://www.cnblogs.com/langtianya/p/4520373.html  ExecutorService的十个使用技巧
 *      http://www.thinksaas.cn/topics/0/80/80708.html jdt编译
 **/
-public class CasLock {
-
-    public static int threadNo = 200000;
-    
-    //线程结束计数
-    public static CountDownLatch endLatch = new CountDownLatch(threadNo);
-    
-    //线程开始计数
-    public static CountDownLatch startLatch = new CountDownLatch(1);
+public class CasLock implements MyLock{
     
     private static final AtomicBoolean lock = new AtomicBoolean(false);
-    public static int balance = 100000000;
     
     //重入锁记录次数
     //private LockCntThreadLocal count = new LockCntThreadLocal();
@@ -82,31 +77,29 @@ public class CasLock {
             new LinkedBlockingQueue<Runnable>(1000000), new TaskThreadFactory());
             
         long start = System.currentTimeMillis();
-        MyPoolTrans poolTrans = new MyPoolTrans();
+        CasLock lock = new CasLock();
+        LockRun poolTrans = new LockRun(lock);
         System.out.println("pool:-----开始全部扣款任务!");
-        for(int i=0; i<threadNo; i++){
+        for(int i=0; i<LockConst.THREAD_NUMBER; i++){
             taskExecutorService.submit(poolTrans);
         }
         
         taskExecutorService.shutdown();
-        while(!taskExecutorService.isTerminated()){
-            LockSupport.parkNanos(2);
-        }
-        System.out.println("pool:-----结束:"+(System.currentTimeMillis()-start)/1000+", 余额:"+balance);
+        LockConst.endLatch.await();
+        System.out.println("pool:-----结束:"+(System.currentTimeMillis()-start)/1000+", 余额:"+LockConst.ACCOUNT_BALANCE);
     }
     
     public static void  noPoolTrans() throws Exception{
         long start = System.currentTimeMillis();
-        MyTrans trans = new MyTrans(startLatch, endLatch);
-        for(int i=0; i<threadNo; i++){
-            
+        CasLock lock = new CasLock();
+        LockRun trans = new LockRun(lock);
+        
+        for(int i=0; i<LockConst.THREAD_NUMBER; i++){
             new Thread(trans, "t"+i).start();
-            //taskExecutorService.submit(trans);
         }
         System.out.println("noPool-----开始全部扣款任务!");
-        startLatch.countDown();
-        endLatch.await();
-        System.out.println("noPool-----结束:"+(System.currentTimeMillis()-start)/1000+", 余额:"+balance);
+        LockConst.endLatch.await();
+        System.out.println("noPool-----结束:"+(System.currentTimeMillis()-start)/1000+", 余额:"+LockConst.ACCOUNT_BALANCE);
     }
     
 }
@@ -140,45 +133,4 @@ class LockCntThreadLocal extends ThreadLocal<Integer>{
     protected Integer initialValue() {
         return 0;
     }
-}
-
-class MyPoolTrans implements Runnable{
-    
-    private CasLock casLock = new CasLock();
-
-    @Override
-    public void run() {
-        this.casLock.lock();
-        CasLock.balance -= 100;
-        System.out.println("thread:"+Thread.currentThread()+", time:"+System.currentTimeMillis()+", money:"+CasLock.balance);
-        this.casLock.unlock();
-    }
-}
-
-class MyTrans implements Runnable{
-    private CasLock casLock = new CasLock();
-    
-    private CountDownLatch startLatch;
-    private CountDownLatch endLatch;
-    
-    public MyTrans(CountDownLatch startLatch, CountDownLatch endLatch) {
-        super();
-        this.startLatch = startLatch;
-        this.endLatch = endLatch;
-    }
-
-    @Override
-    public void run() {
-        try {
-            this.startLatch.await();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        this.casLock.lock();
-        CasLock.balance -= 100;
-        System.out.println("thread:"+Thread.currentThread()+", time:"+System.currentTimeMillis()+", money:"+CasLock.balance);
-        this.casLock.unlock();
-        this.endLatch.countDown();
-    }
-    
 }
